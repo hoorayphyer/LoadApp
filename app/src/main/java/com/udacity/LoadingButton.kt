@@ -6,6 +6,7 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.RectF
 import android.graphics.Typeface
 import android.util.AttributeSet
 import android.view.View
@@ -16,20 +17,22 @@ class LoadingButton @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
     private var widthSize = 0
-    private var heightSize = 0
-    private var loadingDelimiter = 0.0F // the right end of the loading bar as a fraction of the whole length
+    private var heightSize : Int by Delegates.observable(0) {property, oldValue, newValue ->
+        rectBox.bottom = newValue.toFloat()
+    }
+    private var animationProgress = 0.0F // fraction from 0 to 1
 
     private val valueAnimator = ValueAnimator.ofFloat(0.0F, 1.0F).apply {
         duration = 2000
         addUpdateListener { updatedAnimation ->
-            loadingDelimiter = updatedAnimation.animatedValue as Float
+            animationProgress = updatedAnimation.animatedValue as Float
             buttonText = "We are loading"
             invalidate()
         }
 
         addListener(object :AnimatorListenerAdapter(){
             override fun onAnimationEnd(animation: Animator?) {
-                loadingDelimiter = 0.0F
+                animationProgress = 0.0F
                 buttonText = "Download"
             }
         })
@@ -52,6 +55,7 @@ class LoadingButton @JvmOverloads constructor(
     private var ldColor = 0
     private var buttonText = ""
 
+    private var rectBox = RectF(0.0F, 0.0F, 1.0F, 1.0F)
     private val rectPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply{
         style = Paint.Style.FILL
     }
@@ -69,10 +73,14 @@ class LoadingButton @JvmOverloads constructor(
         super.onDraw(canvas)
         canvas?.apply{
             rectPaint.color = ldColor
-            val delim = loadingDelimiter * widthSize.toFloat()
-            drawRect(0.0F, 0.0F, delim, heightSize.toFloat(), rectPaint)
+            val delim = animationProgress * widthSize.toFloat()
+            rectBox.left = 0.0F
+            rectBox.right = delim
+            drawRect(rectBox, rectPaint)
             rectPaint.color = bgColor
-            drawRect(delim, 0.0F, widthSize.toFloat(), heightSize.toFloat(), rectPaint)
+            rectBox.left = delim
+            rectBox.right = widthSize.toFloat()
+            drawRect(rectBox, rectPaint)
 
             // note the subtraction to make it vertically assigned
             val pos_y = (heightSize/2).toFloat() - ( buttonTextPaint.descent() + buttonTextPaint.ascent() ) / 2
