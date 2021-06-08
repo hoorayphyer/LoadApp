@@ -4,10 +4,7 @@ import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.RectF
-import android.graphics.Typeface
+import android.graphics.*
 import android.util.AttributeSet
 import android.view.View
 import androidx.core.content.withStyledAttributes
@@ -42,6 +39,7 @@ class LoadingButton @JvmOverloads constructor(
 
     }
 
+    private var textBounds = Rect()
     private val buttonTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply{
         style = Paint.Style.FILL
         textAlign = Paint.Align.CENTER
@@ -58,6 +56,12 @@ class LoadingButton @JvmOverloads constructor(
     private var rectBox = RectF(0.0F, 0.0F, 1.0F, 1.0F)
     private val rectPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply{
         style = Paint.Style.FILL
+    }
+
+    private var arcBox = RectF(0.0F, 0.0F, 1.0F, 1.0F)
+    private val arcPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = context.getColor(R.color.colorAccent)
     }
 
     init {
@@ -83,8 +87,17 @@ class LoadingButton @JvmOverloads constructor(
             drawRect(rectBox, rectPaint)
 
             // note the subtraction to make it vertically assigned
+            val pos_x = (widthSize/2).toFloat()
             val pos_y = (heightSize/2).toFloat() - ( buttonTextPaint.descent() + buttonTextPaint.ascent() ) / 2
-            drawText(buttonText, (widthSize/2).toFloat(), pos_y, buttonTextPaint)
+
+            buttonTextPaint.getTextBounds(buttonText, 0, buttonText.length, textBounds)
+            arcBox.left = pos_x + textBounds.width() * 1.05F / 2
+            arcBox.top = (heightSize.toFloat() - textBounds.height()) / 2
+            arcBox.right = arcBox.left + textBounds.height()
+            arcBox.bottom = arcBox.top +textBounds.height()
+            drawArc(arcBox, 0.0F, 360.0F * animationProgress, true, arcPaint )
+
+            drawText(buttonText, pos_x, pos_y, buttonTextPaint)
         }
     }
 
