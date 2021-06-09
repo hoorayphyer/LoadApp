@@ -1,6 +1,7 @@
 package com.udacity
 
 import android.app.DownloadManager
+import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
@@ -8,10 +9,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import com.udacity.databinding.ActivityMainBinding
 
 
@@ -51,11 +54,40 @@ class MainActivity : AppCompatActivity() {
             }
             download(url)
         }
+
+        createNotificationChannel()
+        val intent = Intent(this, DetailActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        pendingIntent = PendingIntent.getActivity(this, 0, intent, 0)
+
+//        action = NotificationCompat.Action.Builder(R.drawable.ic_assistant_black_24dp, "actionTitle", pendingIntent).build()
     }
 
     private val receiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            val id = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
+        override fun onReceive(context: Context, intent: Intent) {
+            val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
+            if ( id == downloadID ) {
+                val builder = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_assistant_black_24dp)
+                    .setContentTitle("LoadAppTitle")
+                    .setContentText("Download completed")
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    // Set the intent that will fire when the user taps the notification
+                    .setContentIntent(pendingIntent)
+                    .setAutoCancel(true)
+//                    .addAction(action)
+
+
+                val notificationId = 0
+                with(NotificationManagerCompat.from(context)) {
+                    // notificationId is a unique int for each notification that you must define
+                    notify(notificationId, builder.build())
+                }
+            }
+//            else if (id == -1) {
+//
+//            }
         }
     }
 
@@ -80,7 +112,22 @@ class MainActivity : AppCompatActivity() {
             "https://github.com/udacity/nd940-c3-advanced-android-programming-project-starter/archive/master.zip"
         private const val RetrofitURL =
             "https://github.com/square/retrofit/archive/refs/heads/master.zip"
-        private const val CHANNEL_ID = "channelId"
+        private const val CHANNEL_ID = "LoadAppChannelId"
+    }
+
+    private fun createNotificationChannel() {
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = getString(R.string.channel_name)
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val channel = NotificationChannel(CHANNEL_ID, name, importance)
+
+            // Register the channel with the system
+            notificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
     }
 
 }
