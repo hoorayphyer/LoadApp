@@ -1,9 +1,6 @@
 package com.udacity
 
-import android.app.DownloadManager
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
+import android.app.*
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -14,7 +11,6 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import com.udacity.databinding.ActivityMainBinding
 
 
@@ -55,11 +51,10 @@ class MainActivity : AppCompatActivity() {
             download(url)
         }
 
+        notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         createNotificationChannel()
-        val intent = Intent(this, DetailActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-        pendingIntent = PendingIntent.getActivity(this, 0, intent, 0)
+
 
 //        action = NotificationCompat.Action.Builder(R.drawable.ic_assistant_black_24dp, "actionTitle", pendingIntent).build()
     }
@@ -67,23 +62,8 @@ class MainActivity : AppCompatActivity() {
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
-            if ( id == downloadID ) {
-                val builder = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
-                    .setSmallIcon(R.drawable.ic_assistant_black_24dp)
-                    .setContentTitle("LoadAppTitle")
-                    .setContentText("Download completed")
-                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                    // Set the intent that will fire when the user taps the notification
-                    .setContentIntent(pendingIntent)
-                    .setAutoCancel(true)
-//                    .addAction(action)
-
-
-                val notificationId = 0
-                with(NotificationManagerCompat.from(context)) {
-                    // notificationId is a unique int for each notification that you must define
-                    notify(notificationId, builder.build())
-                }
+            if (id == downloadID) {
+                notificationManager.sendNotification("Download completed", applicationContext)
             }
 //            else if (id == -1) {
 //
@@ -115,6 +95,34 @@ class MainActivity : AppCompatActivity() {
         private const val CHANNEL_ID = "LoadAppChannelId"
     }
 
+    private fun NotificationManager.sendNotification(
+        messageBody: String,
+        applicationContext: Context
+    ) {
+        val notificationId = 0
+        val intent = Intent(applicationContext, DetailActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        pendingIntent = PendingIntent.getActivity(
+            applicationContext,
+            notificationId,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val builder = NotificationCompat.Builder(applicationContext, MainActivity.CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_assistant_black_24dp)
+            .setContentTitle("LoadAppTitle")
+            .setContentText(messageBody)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            // Set the intent that will fire when the user taps the notification
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+//                    .addAction(action)
+        // notificationId is a unique int for each notification that you must define
+        notify(notificationId, builder.build())
+    }
+
     private fun createNotificationChannel() {
         // Create the NotificationChannel, but only on API 26+ because
         // the NotificationChannel class is new and not in the support library
@@ -124,10 +132,9 @@ class MainActivity : AppCompatActivity() {
             val channel = NotificationChannel(CHANNEL_ID, name, importance)
 
             // Register the channel with the system
-            notificationManager =
-                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
     }
+
 
 }
