@@ -118,8 +118,8 @@ class MainActivity : AppCompatActivity() {
         val intent = Intent(applicationContext, DetailActivity::class.java).apply {
             action=ACTION_VIEW
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            putExtra("com.udacity.EXTRA_STATUS", status)
-            putExtra("com.udacity.EXTRA_RADIO_ID", selectedRadioID)
+            putExtra(EXTRA_STATUS_KEY, status)
+            putExtra(EXTRA_RADIO_ID_KEY, selectedRadioID)
         }
         pendingIntent = PendingIntent.getActivity(
             applicationContext,
