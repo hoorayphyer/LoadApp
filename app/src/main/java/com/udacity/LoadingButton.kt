@@ -116,9 +116,9 @@ class LoadingButton @JvmOverloads constructor(
     }
 
     override fun performClick(): Boolean {
-        if (super.performClick()) return true
+        val res = super.performClick()
         runLoadingAnimation()
-        return true
+        return res
     }
 
     private fun runLoadingAnimation() {
