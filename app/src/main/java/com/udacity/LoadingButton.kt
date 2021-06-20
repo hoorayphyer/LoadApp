@@ -2,13 +2,39 @@ package com.udacity
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
+import android.animation.TimeInterpolator
 import android.animation.ValueAnimator
+import android.app.DownloadManager
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
 import android.view.View
 import androidx.core.content.withStyledAttributes
 import kotlin.properties.Delegates
+
+private class DownloadProcessInterpolator(private val downloadID : Long,
+private val downloadManager: DownloadManager): TimeInterpolator {
+    private var totalBytes : Long = -1
+    private var currentFraction = 0.0F
+
+    override fun getInterpolation(input: Float): Float {
+        val query = DownloadManager.Query().setFilterById(downloadID)
+        // cursor points to the data set returned by this database query
+        val cursor = downloadManager.query(query)
+
+        if (cursor.moveToFirst()) { // move cursor to the first row of the data set
+            if (totalBytes == -1L){
+                totalBytes = cursor.getString(cursor.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)).toLong()
+            }
+            if ( totalBytes != -1L ) {
+                val downloaded = cursor.getString(cursor.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)).toFloat()
+                currentFraction = downloaded / totalBytes
+            }
+        }
+        return currentFraction
+    }
+}
+
 
 class LoadingButton @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
@@ -20,7 +46,7 @@ class LoadingButton @JvmOverloads constructor(
     private var animationProgress = 0.0F // fraction from 0 to 1
 
     private val valueAnimator = ValueAnimator.ofFloat(0.0F, 1.0F).apply {
-        duration = 2000
+        duration = 30000
         addUpdateListener { updatedAnimation ->
             animationProgress = updatedAnimation.animatedValue as Float
             buttonText = "We are loading"
@@ -73,6 +99,11 @@ class LoadingButton @JvmOverloads constructor(
         }
     }
 
+    fun getDownloadInfo( id : Long, manager: DownloadManager ) {
+        // uncomment the following to use actual download progress as interpolator, but it turns out jumpy
+        // valueAnimator.interpolator = DownloadProcessInterpolator(id, manager)
+    }
+
     override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)
         canvas?.apply{
@@ -115,14 +146,13 @@ class LoadingButton @JvmOverloads constructor(
         setMeasuredDimension(w, h)
     }
 
-    override fun performClick(): Boolean {
-        val res = super.performClick()
-        runLoadingAnimation()
-        return res
+    fun runLoadingAnimation() {
+        valueAnimator.start()
     }
 
-    private fun runLoadingAnimation() {
-        valueAnimator.start()
+    fun endAnimation() {
+        valueAnimator.setCurrentFraction(1.0F)
+        valueAnimator.end()
     }
 
 }

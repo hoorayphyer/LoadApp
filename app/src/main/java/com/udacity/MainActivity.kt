@@ -33,24 +33,29 @@ class MainActivity : AppCompatActivity() {
 
         registerReceiver(receiver, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
 
-        val radioGroup = binding.includedContent.radioGroup
-        binding.includedContent.customButton.setOnClickListener {
-            selectedRadioID = radioGroup.checkedRadioButtonId
-            if (selectedRadioID == -1) {
-                Toast.makeText(
-                    applicationContext,
-                    "Please select a file to download",
-                    Toast.LENGTH_LONG
-                ).show()
-                return@setOnClickListener
+        binding.includedContent.apply {
+            val radioGroup = radioGroup
+            customButton.setOnClickListener {
+                selectedRadioID = radioGroup.checkedRadioButtonId
+                if (selectedRadioID == -1) {
+                    Toast.makeText(
+                        applicationContext,
+                        "Please select a file to download",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    return@setOnClickListener
+                }
+                val url = when (selectedRadioID) {
+                    R.id.glide_button -> GlideURL
+                    R.id.loadapp_button -> LoadAppURL
+                    R.id.retrofit_button -> RetrofitURL
+                    else -> ""
+                }
+                downloadID = download(url)
+                customButton.getDownloadInfo(downloadID, getSystemService(DOWNLOAD_SERVICE) as DownloadManager)
+                customButton.runLoadingAnimation()
             }
-            val url = when (selectedRadioID) {
-                R.id.glide_button -> GlideURL
-                R.id.loadapp_button -> LoadAppURL
-                R.id.retrofit_button -> RetrofitURL
-                else -> ""
-            }
-            download(url)
+
         }
 
         notificationManager =
@@ -67,8 +72,10 @@ class MainActivity : AppCompatActivity() {
     // What this receiver's onReceive does is send notification with a different intent that opens the DetailActivity
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
-            val status = getStatus(id)
+            // the following line just returns same value as downloadID
+            // val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
+            val status = getStatus(downloadID)
+            binding.includedContent.customButton.endAnimation()
             notificationManager.sendNotification("Download completed", applicationContext, status)
         }
 
@@ -85,7 +92,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun download(url: String) {
+    private fun download(url: String): Long {
         val request =
             DownloadManager.Request(Uri.parse(url))
                 .setTitle(getString(R.string.app_name))
@@ -95,8 +102,7 @@ class MainActivity : AppCompatActivity() {
                 .setAllowedOverRoaming(true)
 
         val downloadManager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
-        downloadID =
-            downloadManager.enqueue(request)// enqueue puts the download request in the queue.
+        return downloadManager.enqueue(request)// enqueue puts the download request in the queue.
     }
 
     companion object {
