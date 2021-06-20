@@ -6,4 +6,5 @@
     <color name="white">#FFFFFF</color>
     <color name="downloadSuccess">#009688</color>
     <color name="downloadFail">#F44336</color>
+    <color name="cloud">#9C27B0</color>
 </resources>
