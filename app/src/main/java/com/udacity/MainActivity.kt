@@ -133,7 +133,7 @@ class MainActivity : AppCompatActivity() {
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT
         )
-       // action = NotificationCompat.Action.Builder(R.drawable.ic_assistant_black_24dp, "check for status", pendingIntent).build()
+       action = NotificationCompat.Action.Builder(R.drawable.ic_assistant_black_24dp, "check for status", pendingIntent).build()
 
         val builder = NotificationCompat.Builder(applicationContext, MainActivity.CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_assistant_black_24dp)
@@ -143,7 +143,7 @@ class MainActivity : AppCompatActivity() {
             // Set the intent that will fire when the user taps the notification
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
-         //   .addAction(action)
+            .addAction(action)
 
         // notificationId is a unique int for each notification that you must define
         notify(notificationId, builder.build())
